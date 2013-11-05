@@ -19,7 +19,15 @@ module Synapse
       @haproxy = opts['haproxy']
       log.warn "haproxy config for service #{name} does not include a port: a generic backend will be created but it's on you to move traffic there somehow in extra_sections" unless @haproxy.include?('port')
 
-      @haproxy['listen'] ||= []
+      @haproxy['config'] ||= []
+
+      # include depricated fields if present in the config
+      %w{listen backend}.each do |dep_field|
+        if @haproxy.include? dep_field
+          @haproxy['config'] = @haproxy['config'].concat(@haproxy[dep_field]).uniq()
+        end
+      end
+
       @haproxy['server_options'] ||= ""
       @haproxy['server_port_override'] ||= nil
 
