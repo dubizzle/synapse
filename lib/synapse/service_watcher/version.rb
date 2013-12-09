@@ -13,7 +13,9 @@ module Synapse
       @zk = ZK.new(zk_hosts)
 
       # call the callback to bootstrap the process
+      # starting ZK watcher for nodes lookup
       watcher_callback.call
+      # starting active production version watcher
       version_watcher_callback.call
     end
 
@@ -21,12 +23,10 @@ module Synapse
     def validate_discovery_opts
       raise ArgumentError, "invalid discovery method #{@discovery['method']}" \
         unless @discovery['method'] == 'version'
-      raise ArgumentError, "missing or invalid zookeeper host for service #{@name}" \
-        unless @discovery['hosts']
-      raise ArgumentError, "invalid zookeeper path for service #{@name}" \
-        unless @discovery['path']
-      raise ArgumentError, "invalid zookeeper version path for service #{@name}" \
-        unless @discovery['version_path']          
+      %w{hosts path version_path synapse_config reload_command}.each do |required|
+        raise ArgumentError, "missing required argument #{required} in VersionWatcher check" \
+          unless  @discovery[required]
+      end
     end
 
     # find the current version at the discovery path; update synapse config
@@ -35,7 +35,7 @@ module Synapse
 
       begin
         version = @zk.get(@discovery['version_path'], :watch => true).first
-        synapse_config = '/opt/smartstack/synapse/config.json'
+        synapse_config = @discovery['synapse_config']
         log.debug "synapse: discovered version #{version}"
         updated_path = @discovery['path'].split("/")
         # remove the old version
@@ -79,9 +79,9 @@ module Synapse
         if @restart_synapse
           @restart_synapse = false
           log.info("restarting synapse")
-          res = `sudo service synapse reload`
+          res = `#{@discovery['reload_command']}`
           log.debug(res)
-          raise "failed to reload haproxy via command}: #{res}" unless $?.success?
+          raise "failed to reload haproxy via #{@discovery['reload_command']}: #{res}" unless $?.success?
         end
       end
     end
