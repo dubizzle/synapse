@@ -7,7 +7,7 @@ module Synapse
     def start
       zk_hosts = @discovery['hosts'].shuffle.join(',')
 
-      log.info "synapse: starting ZK watcher #{@name} @ hosts: #{zk_hosts}, 
+      log.info "synapse: starting version watcher #{@name} @ hosts: #{zk_hosts}, 
                 services path: #{@discovery['path']}, 
                 version_path: #{@discovery['version_path']}"
       @zk = ZK.new(zk_hosts)
