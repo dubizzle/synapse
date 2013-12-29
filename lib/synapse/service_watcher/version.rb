@@ -41,7 +41,7 @@ module Synapse
         # remove the old version
         updated_path.pop
         # append the new version
-        updated_path = updated_path + ["#{version}"]
+        updated_path = updated_path + ["v#{version}"]
         updated_path = updated_path.join("/")
         log.info("updated path #{updated_path}")
         if @discovery['path'] != updated_path
