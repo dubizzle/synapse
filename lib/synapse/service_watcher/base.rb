@@ -15,6 +15,7 @@ module Synapse
       @name = opts['name']
       @discovery = opts['discovery']
       @leader_election = opts['leader_election'] || false
+      @slave_port = opts['slave_port'] || 0
 
       # the haproxy config
       @haproxy = opts['haproxy']
