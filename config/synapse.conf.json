@@ -76,7 +76,8 @@
           "mode http",
           "option httpchk /health",
         ]
-      }
+      },
+      "slave_port" = 3215
     }
   },
   "haproxy": {
