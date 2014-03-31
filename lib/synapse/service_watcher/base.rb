@@ -46,6 +46,14 @@ module Synapse
       true
     end
 
+    def slave_port
+      return @slave_port
+    end
+
+    def leader_election?
+      return @leader_election
+    end
+
     private
     def validate_discovery_opts
       raise ArgumentError, "invalid discovery method '#{@discovery['method']}' for base watcher" \

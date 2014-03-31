@@ -549,7 +549,7 @@ module Synapse
         new_config << generate_frontend_stanza(watcher, @watcher_configs[watcher.name]['frontend'])
         new_config << generate_backend_stanza(watcher, @watcher_configs[watcher.name]['backend'])
 
-        if watcher.leader_election
+        if watcher.leader_election?
             new_config << generate_frontend_stanza(watcher, @watcher_configs[watcher.name]['frontend'], slave=true)
             new_config << generate_backend_stanza(watcher, @watcher_configs[watcher.name]['backend'], slave=true)
         end
@@ -616,7 +616,7 @@ module Synapse
       watcher_name = watcher.name
       port = watcher.haproxy['port']
       if slave
-        watcher_name << '_slave'
+        watcher_name = "#{watcher.name}_slave"
         port = watcher.slave_port
       end
 
@@ -636,7 +636,7 @@ module Synapse
     def generate_backend_stanza(watcher, config, slave=false)
       watcher_name = watcher.name
       if slave
-        watcher_name << '_slave'
+        watcher_name = "#{watcher.name}_slave"
       end
 
       if watcher.backends.empty?
@@ -652,7 +652,9 @@ module Synapse
             # don't add the master node (not marked as a backup node) to the slaves backend stanza
             next
           else
-            "\tserver #{backend_name} #{backend['host']}:#{backend['port']} #{watcher.haproxy['server_options']}#{' backup' if backend['backup'] and not slave }" }
+            "\tserver #{backend_name} #{backend['host']}:#{backend['port']} #{watcher.haproxy['server_options']}#{' backup' if backend['backup'] and not slave }"
+	  end
+	}
       ]
     end
 
