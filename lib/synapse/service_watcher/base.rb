@@ -15,6 +15,7 @@ module Synapse
       @name = opts['name']
       @discovery = opts['discovery']
       @leader_election = opts['leader_election'] || false
+      @slave_port = opts['slave_port'] || 0
 
       # the haproxy config
       @haproxy = opts['haproxy']
@@ -43,6 +44,14 @@ module Synapse
     # this should be overridden to do a health check of the watcher
     def ping?
       true
+    end
+
+    def slave_port
+      return @slave_port
+    end
+
+    def leader_election?
+      return @leader_election
     end
 
     private

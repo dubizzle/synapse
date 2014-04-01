@@ -548,6 +548,11 @@ module Synapse
 
         new_config << generate_frontend_stanza(watcher, @watcher_configs[watcher.name]['frontend'])
         new_config << generate_backend_stanza(watcher, @watcher_configs[watcher.name]['backend'])
+
+        if watcher.leader_election?
+            new_config << generate_frontend_stanza(watcher, @watcher_configs[watcher.name]['frontend'], slave=true)
+            new_config << generate_backend_stanza(watcher, @watcher_configs[watcher.name]['backend'], slave=true)
+        end
       end
 
       log.debug "synapse: new haproxy config: #{new_config}"
@@ -607,31 +612,49 @@ module Synapse
     end
 
     # generates an individual stanza for a particular watcher
-    def generate_frontend_stanza(watcher, config)
+    def generate_frontend_stanza(watcher, config, slave=false)
+      watcher_name = watcher.name
+      port = watcher.haproxy['port']
+      if slave
+        watcher_name = "#{watcher.name}_slave"
+        port = watcher.slave_port
+      end
+
       unless watcher.haproxy.has_key?("port")
-        log.debug "synapse: not generating frontend stanza for watcher #{watcher.name} because it has no port defined"
+        log.debug "synapse: not generating frontend stanza for watcher #{watcher_name} because it has no port defined"
         return []
       end
 
       stanza = [
-        "\nfrontend #{watcher.name}",
+        "\nfrontend #{watcher_name}",
         config.map {|c| "\t#{c}"},
-        "\tbind #{@opts['bind_address'] || 'localhost'}:#{watcher.haproxy['port']}",
-        "\tdefault_backend #{watcher.name}"
+        "\tbind #{@opts['bind_address'] || 'localhost'}:#{port}",
+        "\tdefault_backend #{watcher_name}"
       ]
     end
 
-    def generate_backend_stanza(watcher, config)
+    def generate_backend_stanza(watcher, config, slave=false)
+      watcher_name = watcher.name
+      if slave
+        watcher_name = "#{watcher.name}_slave"
+      end
+
       if watcher.backends.empty?
-        log.warn "synapse: no backends found for watcher #{watcher.name}"
+        log.warn "synapse: no backends found for watcher #{watcher_name}"
       end
 
       stanza = [
-        "\nbackend #{watcher.name}",
+        "\nbackend #{watcher_name}",
         config.map {|c| "\t#{c}"},
         watcher.backends.shuffle.map {|backend|
           backend_name = construct_name(backend)
-          "\tserver #{backend_name} #{backend['host']}:#{backend['port']} #{watcher.haproxy['server_options']}#{' backup' if backend['backup']}" }
+          if slave and not backend['backup']
+            # don't add the master node (not marked as a backup node) to the slaves backend stanza
+            next
+          else
+            "\tserver #{backend_name} #{backend['host']}:#{backend['port']} #{watcher.haproxy['server_options']}#{' backup' if backend['backup'] and not slave }"
+	  end
+	}
       ]
     end
 

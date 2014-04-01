@@ -51,6 +51,33 @@
           "option httpchk /health",
         ]
       }
+    },
+    "leader_election_service" => {
+      "default_servers": [
+        {
+          "name": "default1",
+          "host": "localhost",
+          "port": 8422
+        }
+      ],
+      "discovery": {
+        "method": "zookeeper",
+        "path": "/airbnb/service/service3",
+        "hosts": [
+          "zk0.airbnb.com:2181",
+          "zk1.airbnb.com:2181"
+        ]
+      },
+      "leader_election": true,
+      "haproxy": {
+        "port": 3214,
+        "server_options": "check inter 2s rise 3 fall 2",
+        "listen": [
+          "mode http",
+          "option httpchk /health",
+        ]
+      },
+      "slave_port" = 3215
     }
   },
   "haproxy": {
